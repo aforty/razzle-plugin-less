@@ -40,13 +40,12 @@ const defaultOptions = {
     dev: {
       sourceMap: true,
       importLoaders: 1,
-      modules: false,
+      modules: { auto: true },
     },
     prod: {
       sourceMap: false,
       importLoaders: 1,
-      modules: false,
-      minimize: true,
+      modules: { auto: true },
     },
   },
   style: {},
@@ -70,31 +69,37 @@ module.exports = (
   const options = Object.assign({}, defaultOptions, userOptions);
 
   const styleLoader = {
-    loader: 'style-loader',
+    loader: require.resolve('style-loader'),
     options: options.style,
   };
 
   const cssLoader = {
-    loader: 'css-loader',
+    loader: require.resolve('css-loader'),
     options: options.css[constantEnv],
   };
 
   const resolveUrlLoader = {
-    loader: 'resolve-url-loader',
+    loader: require.resolve('resolve-url-loader'),
     options: options.resolveUrl[constantEnv],
   };
 
   const postCssLoader = {
-    loader: 'postcss-loader',
+    loader: require.resolve('postcss-loader'),
     options: Object.assign({}, options.postcss[constantEnv], {
       plugins: () => options.postcss.plugins,
     }),
   };
 
   const lessLoader = {
-    loader: 'less-loader',
+    loader: require.resolve('less-loader'),
     options: Object.assign({}, options.less[constantEnv]),
   };
+  
+  const miniCssPlugin = config.plugins.find(i => i.constructor.name === 'MiniCssExtractPlugin')
+  if (miniCssPlugin) {
+    const idx = config.plugins.indexOf(miniCssPlugin);
+    config.plugins.splice(idx, 1, new MiniCssExtractPlugin(miniCssPlugin.options));
+  }
 
   config.module.rules = [
     ...config.module.rules,
@@ -103,7 +108,7 @@ module.exports = (
       use: isServer
         ? [
             {
-              loader: 'css-loader',
+              loader: require.resolve('css-loader'),
               options: Object.assign({}, options.css[constantEnv], {
                 onlyLocals: true,
               }),
